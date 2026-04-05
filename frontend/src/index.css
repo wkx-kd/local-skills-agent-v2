@@ -1,0 +1,51 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #131314;
+  color: #e3e3e3;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #444746;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5f6368;
+}
+
+::selection {
+  background: rgba(138, 180, 248, 0.3);
+  color: #fff;
+}
+
+.chat-container {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px;
+}
+
+.pill-input {
+  border-radius: 32px !important;
+  background: #1e1f20 !important;
+  border: 1px solid #444746 !important;
+  box-shadow: none !important;
+}
+
+.pill-input:focus-within {
+  background: #2a2b2f !important;
+}

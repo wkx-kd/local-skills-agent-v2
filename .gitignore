@@ -1,0 +1,94 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment Variables — 所有包含密钥的环境文件
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.env.development
+!.env.example
+
+# 个人隐私 & 密钥文件
+secrets.json
+secrets.yaml
+secrets.yml
+*.pem
+*.key
+*_rsa
+*_dsa
+*.p12
+*.pfx
+
+# Claude / AI 工具配置（可能含个人信息）
+.claude/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Uploads & Output
+backend/uploads/
+uploads/
+output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# Alembic
+backend/alembic/__pycache__/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MyPy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/

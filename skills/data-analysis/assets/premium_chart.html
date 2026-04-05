@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Analytics Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: rgba(255,255,255,0.06);
+    --gold: #c9a84c;
+    --gold-light: #f0cb6f;
+    --gold-dim: rgba(201,168,76,0.15);
+    --teal: #4ccfb4;
+    --rose: #e06b7a;
+    --text: #e8e4dc;
+    --muted: rgba(232,228,220,0.4);
+    --glow: 0 0 40px rgba(201,168,76,0.12);
+    --font-display: -apple-system, "PingFang TC", "Microsoft YaHei", "微软雅黑", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Microsoft YaHei", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(76,207,180,0.04) 0%, transparent 50%);
+  }
+
+  .dashboard {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 48px;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .header-left h1 {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .header-left h1 span {
+    color: var(--gold);
+  }
+
+  .header-left p {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--gold-light);
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+    animation: pulse 2s ease infinite;
+  }
+
+  /* KPI CARDS */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .kpi::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .kpi:hover { border-color: rgba(201,168,76,0.2); }
+  .kpi:hover::after { opacity: 0.5; }
+
+  .kpi-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--text);
+  }
+
+  .kpi-delta {
+    font-size: 0.68rem;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kpi-delta.up { color: var(--teal); }
+  .kpi-delta.down { color: var(--rose); }
+
+  .kpi-icon {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 1.4rem;
+    opacity: 0.15;
+  }
+
+  /* CHART CARDS */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(201,168,76,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .card-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .card-heading {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  /* BAR CHART */
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 180px;
+    padding-bottom: 32px;
+    position: relative;
+  }
+
+  .bar-chart::after {
+    content: '';
+    position: absolute;
+    bottom: 32px; left: 0; right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar-wrap {
+    width: 100%;
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    flex: 1;
+  }
+
+  .bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    transform-origin: bottom;
+    transform: scaleY(0);
+    transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+
+  .bar.primary {
+    background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+    box-shadow: 0 -4px 16px rgba(201,168,76,0.3);
+  }
+
+  .bar.secondary {
+    background: linear-gradient(180deg, rgba(76,207,180,0.7) 0%, rgba(76,207,180,0.3) 100%);
+  }
+
+  .bar.animated { transform: scaleY(1); }
+
+  .bar-label {
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  /* LINE CHART SVG */
+  .line-chart-wrap {
+    position: relative;
+    height: 180px;
+    padding-bottom: 32px;
+  }
+
+  .line-chart-wrap svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .grid-line {
+    stroke: rgba(255,255,255,0.05);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+  }
+
+  .line-path {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+  }
+
+  .line-path.animated { stroke-dashoffset: 0; }
+
+  .area-path {
+    fill: url(#areaGrad);
+    opacity: 0;
+    transition: opacity 0.8s ease 1s;
+  }
+
+  .area-path.animated { opacity: 1; }
+
+  .dot {
+    fill: var(--bg);
+    stroke: var(--gold);
+    stroke-width: 2;
+    r: 4;
+    transform-origin: center;
+    transform: scale(0);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .dot.animated { transform: scale(1); }
+
+  /* DONUT CHART */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .donut-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .donut-wrap {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    margin: 8px auto 16px;
+  }
+
+  .donut-wrap svg {
+    transform: rotate(-90deg);
+    width: 100%; height: 100%;
+  }
+
+  .donut-bg {
+    fill: none;
+    stroke: rgba(255,255,255,0.05);
+    stroke-width: 10;
+  }
+
+  .donut-fg {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s;
+  }
+
+  .donut-fg.animated { }
+
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .donut-pct {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .donut-sub {
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .donut-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 2px;
+  }
+
+  .donut-name {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    text-align: center;
+    color: var(--text);
+  }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.63rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+  }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .footer p {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .footer-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .footer-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .footer-dot:nth-child(2) {
+    background: rgba(201,168,76,0.4);
+  }
+
+  /* TOOLTIP */
+  .tooltip {
+    position: fixed;
+    background: rgba(22,22,31,0.95);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.68rem;
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .tooltip.show { opacity: 1; }
+
+  .tooltip-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .tooltip-val {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--gold-light);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Analytics <span>Report</span></h1>
+      <p>第一季度綜合績效報告 · 2024</p>
+    </div>
+    <div class="badge">● 即時數據更新中</div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-icon">◈</div>
+      <div class="kpi-label">總營業額</div>
+      <div class="kpi-value">¥4,829萬</div>
+      <div class="kpi-delta up">▲ +18.4% 較上季</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">◇</div>
+      <div class="kpi-label">客戶留存率</div>
+      <div class="kpi-value">91.7%</div>
+      <div class="kpi-delta up">▲ +3.2pts 較上季</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-icon">○</div>
+      <div class="kpi-label">新增客戶</div>
+      <div class="kpi-value">2,341</div>
+      <div class="kpi-delta down">▼ -5.1% 較上季</div>
+    </div>
+  </div>
+
+  <!-- CHARTS GRID -->
+  <div class="charts-grid">
+    <!-- BAR CHART -->
+    <div class="chart-card">
+      <div class="card-title">月度分析</div>
+      <div class="card-heading">收入 vs 支出</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>收入</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--teal);opacity:.7"></div>支出</div>
+      </div>
+      <div class="bar-chart" id="barChart">
+        <!-- generated by JS -->
+      </div>
+    </div>
+
+    <!-- LINE CHART -->
+    <div class="chart-card">
+      <div class="card-title">趨勢追蹤</div>
+      <div class="card-heading">成長軌跡</div>
+      <div class="line-chart-wrap">
+        <svg id="lineChart" viewBox="0 0 280 148" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c9a84c" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#c9a84c" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line class="grid-line" x1="0" y1="37" x2="280" y2="37"/>
+          <line class="grid-line" x1="0" y1="74" x2="280" y2="74"/>
+          <line class="grid-line" x1="0" y1="111" x2="280" y2="111"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM DONUTS -->
+  <div class="bottom-row">
+    <div class="donut-card">
+      <div class="donut-title">指標一</div>
+      <div class="donut-name">市場佔有率</div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="donut-bg" cx="50" cy="50" r="45"/>
+          <circle class="donut-fg" id="donut1" cx="50" cy="50" r="45"
+            style="stroke:var(--gold); stroke-dashoffset: calc(283 - 283 * 0.72)"/>
+        </svg>
+        <div class="donut-center">
+          <span class="donut-pct">72%</span>
+          <span class="donut-sub">佔比</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="donut-card">
+      <div class="donut-title">指標二</div>
+      <div class="donut-name">品牌認知度</div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="donut-bg" cx="50" cy="50" r="45"/>
+          <circle class="donut-fg" id="donut2" cx="50" cy="50" r="45"
+            style="stroke:var(--teal); stroke-dashoffset: calc(283 - 283 * 0.87)"/>
+        </svg>
+        <div class="donut-center">
+          <span class="donut-pct">87%</span>
+          <span class="donut-sub">佔比</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="donut-card">
+      <div class="donut-title">指標三</div>
+      <div class="donut-name">客戶滿意度</div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 100 100">
+          <circle class="donut-bg" cx="50" cy="50" r="45"/>
+          <circle class="donut-fg" id="donut3" cx="50" cy="50" r="45"
+            style="stroke:var(--rose); stroke-dashoffset: calc(283 - 283 * 0.64)"/>
+        </svg>
+        <div class="donut-center">
+          <span class="donut-pct">64%</span>
+          <span class="donut-sub">佔比</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>數據來源：內部商業智能系統 · 每日自動刷新</p>
+    <div class="footer-dots">
+      <div class="footer-dot"></div>
+      <div class="footer-dot"></div>
+      <div class="footer-dot"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOOLTIP -->
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-label" id="tooltip-label"></div>
+  <div class="tooltip-val" id="tooltip-val"></div>
+</div>
+
+<script>
+// Data
+const months = ['1月','2月','3月','4月','5月','6月','7月','8月'];
+const revenue = [62, 75, 58, 88, 95, 72, 105, 118];
+const expenses = [45, 52, 48, 60, 65, 54, 72, 80];
+const lineData = [30, 52, 41, 65, 58, 80, 72, 96, 88, 110, 102, 125];
+
+// Build bar chart
+const barChart = document.getElementById('barChart');
+const maxVal = Math.max(...revenue, ...expenses);
+months.forEach((m, i) => {
+  const group = document.createElement('div');
+  group.className = 'bar-group';
+  const wrap = document.createElement('div');
+  wrap.className = 'bar-wrap';
+
+  const b1 = document.createElement('div');
+  b1.className = 'bar primary';
+  b1.style.height = (revenue[i] / maxVal * 100) + '%';
+  b1.dataset.label = m + ' 收入';
+  b1.dataset.val = '¥' + revenue[i] + '0萬';
+
+  const b2 = document.createElement('div');
+  b2.className = 'bar secondary';
+  b2.style.height = (expenses[i] / maxVal * 100) + '%';
+  b2.dataset.label = m + ' 支出';
+  b2.dataset.val = '¥' + expenses[i] + '0萬';
+
+  wrap.append(b1, b2);
+  const label = document.createElement('div');
+  label.className = 'bar-label';
+  label.textContent = m;
+  group.append(wrap, label);
+  barChart.appendChild(group);
+
+  [b1, b2].forEach(bar => {
+    bar.addEventListener('mouseenter', e => showTooltip(e, bar.dataset.label, bar.dataset.val));
+    bar.addEventListener('mouseleave', hideTooltip);
+    bar.addEventListener('mousemove', e => moveTooltip(e));
+  });
+});
+
+// Build line chart
+const svg = document.getElementById('lineChart');
+const W = 280, H = 148;
+const padX = 10, padY = 10;
+const maxL = Math.max(...lineData);
+const minL = Math.min(...lineData);
+const pts = lineData.map((v, i) => {
+  const x = padX + (i / (lineData.length - 1)) * (W - padX * 2);
+  const y = padY + (1 - (v - minL) / (maxL - minL)) * (H - padY * 2);
+  return [x, y];
+});
+
+// Area
+const areaD = `M${pts[0][0]},${H-padY} ` +
+  pts.map(p => `L${p[0]},${p[1]}`).join(' ') +
+  ` L${pts[pts.length-1][0]},${H-padY} Z`;
+const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+area.setAttribute('class', 'area-path');
+area.setAttribute('d', areaD);
+svg.appendChild(area);
+
+// Line
+const lineD = 'M' + pts.map(p => p.join(',')).join(' L');
+const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+line.setAttribute('class', 'line-path');
+line.setAttribute('d', lineD);
+svg.appendChild(line);
+
+// Dots
+pts.forEach((p, i) => {
+  const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  c.setAttribute('class', 'dot');
+  c.setAttribute('cx', p[0]);
+  c.setAttribute('cy', p[1]);
+  c.setAttribute('r', 4);
+  c.style.transitionDelay = (1.4 + i * 0.07) + 's';
+  svg.appendChild(c);
+});
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, label, val) {
+  document.getElementById('tooltip-label').textContent = label;
+  document.getElementById('tooltip-val').textContent = val;
+  tooltip.classList.add('show');
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  tooltip.style.left = (e.clientX + 12) + 'px';
+  tooltip.style.top = (e.clientY - 40) + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('show'); }
+
+// Animate on scroll / load
+function animateAll() {
+  document.querySelectorAll('.bar').forEach((b, i) => {
+    setTimeout(() => b.classList.add('animated'), i * 60 + 200);
+  });
+  setTimeout(() => {
+    line.classList.add('animated');
+    area.classList.add('animated');
+  }, 400);
+  setTimeout(() => {
+    document.querySelectorAll('.dot').forEach(d => d.classList.add('animated'));
+  }, 500);
+
+  // Donuts
+  const donuts = document.querySelectorAll('.donut-fg');
+  const targets = [0.72, 0.87, 0.64];
+  donuts.forEach((d, i) => {
+    setTimeout(() => {
+      d.style.strokeDashoffset = 283 - 283 * targets[i];
+    }, 300 + i * 120);
+  });
+}
+
+// Intersection observer
+const observer = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) { animateAll(); observer.disconnect(); }
+}, { threshold: 0.1 });
+
+observer.observe(document.querySelector('.dashboard'));
+</script>
+
+</body>
+</html>

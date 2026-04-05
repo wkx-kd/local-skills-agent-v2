@@ -1,0 +1,43 @@
+# FastAPI + 异步
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+websockets>=13.0
+python-multipart>=0.0.12
+
+# 数据库
+sqlalchemy[asyncio]>=2.0.35
+asyncpg>=0.30.0
+alembic>=1.14.0
+
+# 向量数据库
+pymilvus>=2.4.9
+
+# LLM
+anthropic>=0.52.0
+openai>=1.50.0
+
+# Embedding
+dashscope>=1.20.0
+
+# 认证
+pyjwt>=2.9.0
+passlib[bcrypt]>=1.7.4
+
+# 搜索
+tavily-python>=0.5.0
+requests>=2.32.0
+
+# 文件处理
+pdfplumber>=0.11.0
+pypdf>=5.0.0
+python-docx>=1.1.0
+openpyxl>=3.1.0
+
+# 工具
+python-dotenv>=1.0.0
+pyyaml>=6.0
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+
+# 后台任务
+apscheduler>=3.10.0
