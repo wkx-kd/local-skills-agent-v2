@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 class ConversationCreate(BaseModel):
     title: Optional[str] = "新对话"
-    model: Optional[str] = "qwen3-max"
+    model: Optional[str] = "qwen-max"
     skill_group_id: Optional[uuid.UUID] = None
 
 
