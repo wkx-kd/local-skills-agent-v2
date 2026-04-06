@@ -81,12 +81,15 @@ services:
     container_name: agent_backend
     restart: unless-stopped
     environment:
-      # LLM (DashScope via Anthropic-compatible API)
-      LLM_BACKEND: anthropic
+      # LLM — 全部从 .env 读取，不在此处硬编码
+      LLM_BACKEND: ${LLM_BACKEND:-anthropic}
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
-      DASHSCOPE_BASE_URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-ollama}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-http://localhost:11434/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-qwen-plus}
       # Embedding
-      EMBEDDING_MODEL: text-embedding-v3
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v3}
       # Database
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -97,11 +100,11 @@ services:
       MILVUS_HOST: milvus
       MILVUS_PORT: 19530
       # Search
-      SEARCH_PROVIDER: tavily
+      SEARCH_PROVIDER: ${SEARCH_PROVIDER:-tavily}
       TAVILY_API_KEY: ${TAVILY_API_KEY}
       # JWT
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      # CORS — allow from nginx (same server, port 80)
+      # CORS
       CORS_ORIGINS: '["http://localhost","http://localhost:80","http://${SERVER_IP:-localhost}"]'
       # Upload
       UPLOAD_DIR: /app/uploads
