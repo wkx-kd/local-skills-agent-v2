@@ -65,10 +65,8 @@ export function useChat() {
     store.setIsGenerating(true);
     store.resetStreamContent();
 
-    // 连接 WebSocket 并发送
-    connect(conv.id);
-    // 等待连接建立
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // 等待 WebSocket 连接建立后再发送
+    await connect(conv.id);
     send({ type: 'message', content, files: fileIds, web_search: webSearch });
   }, [store, connect, send]);
 

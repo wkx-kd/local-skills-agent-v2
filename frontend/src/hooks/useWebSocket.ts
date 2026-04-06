@@ -10,34 +10,47 @@ interface UseWebSocketOptions {
 export function useWebSocket(options: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
 
-  const connect = useCallback((conversationId: string) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
+  // Returns a promise that resolves when the connection is open
+  const connect = useCallback((conversationId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const token = localStorage.getItem('access_token');
+      if (!token) { reject(new Error('No token')); return; }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/chat/ws/${conversationId}?token=${token}`;
-
-    const ws = new WebSocket(wsUrl);
-
-    ws.onmessage = (event) => {
-      try {
-        const data: WSMessageReceive = JSON.parse(event.data);
-        options.onMessage(data);
-      } catch {
-        console.error('Failed to parse WS message:', event.data);
+      // Close any existing connection first
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
       }
-    };
 
-    ws.onclose = () => {
-      wsRef.current = null;
-      options.onClose?.();
-    };
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/chat/ws/${conversationId}?token=${token}`;
 
-    ws.onerror = (error) => {
-      options.onError?.(error);
-    };
+      const ws = new WebSocket(wsUrl);
 
-    wsRef.current = ws;
+      ws.onopen = () => {
+        wsRef.current = ws;
+        resolve();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data: WSMessageReceive = JSON.parse(event.data);
+          options.onMessage(data);
+        } catch {
+          console.error('Failed to parse WS message:', event.data);
+        }
+      };
+
+      ws.onclose = () => {
+        wsRef.current = null;
+        options.onClose?.();
+      };
+
+      ws.onerror = (error) => {
+        options.onError?.(error);
+        reject(error);
+      };
+    });
   }, [options]);
 
   const send = useCallback((data: WSMessageSend) => {
