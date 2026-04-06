@@ -10,14 +10,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agent_secret}
       POSTGRES_DB: ${POSTGRES_DB:-agent_db}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agent}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   etcd:
     image: quay.io/coreos/etcd:v3.5.18
@@ -44,8 +44,6 @@ services:
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-    ports:
-      - "9001:9001"
     volumes:
       - minio_data:/minio_data
     command: minio server /minio_data --console-address ":9001"
@@ -62,9 +60,6 @@ services:
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
-    ports:
-      - "${MILVUS_PORT:-19530}:19530"
-      - "9091:9091"
     volumes:
       - milvus_data:/var/lib/milvus
     command: ["milvus", "run", "standalone"]
@@ -79,8 +74,64 @@ services:
       timeout: 10s
       retries: 10
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agent_backend
+    restart: unless-stopped
+    environment:
+      # LLM (DashScope via Anthropic-compatible API)
+      LLM_BACKEND: anthropic
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      DASHSCOPE_BASE_URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+      # Embedding
+      EMBEDDING_MODEL: text-embedding-v3
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agent_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-agent_db}
+      # Milvus
+      MILVUS_HOST: milvus
+      MILVUS_PORT: 19530
+      # Search
+      SEARCH_PROVIDER: tavily
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # CORS — allow from nginx (same server, port 80)
+      CORS_ORIGINS: '["http://localhost","http://localhost:80","http://${SERVER_IP:-localhost}"]'
+      # Upload
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: 50
+    volumes:
+      - uploads_data:/app/uploads
+      - skills_data:/app/../skills
+    depends_on:
+      postgres:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agent_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   etcd_data:
   minio_data:
   milvus_data:
+  uploads_data:
+  skills_data:
