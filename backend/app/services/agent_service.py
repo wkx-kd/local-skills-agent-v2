@@ -239,6 +239,14 @@ class AgentRunner:
             file_ids=file_ids,
         )
 
+        # 用户明确开启 web_search：追加提示让模型主动搜索
+        if self.enable_web_search:
+            enriched_system += (
+                "\n\n## Web 搜索已启用\n"
+                "用户已明确开启 Web 搜索。当问题涉及实时信息、最新事件、当前价格/数据或你不确定的"
+                "事实时，请主动调用 web_search 工具进行搜索，而不是仅凭训练数据作答。"
+            )
+
         # 2. 保存用户消息
         user_msg = Message(
             conversation_id=conv_uuid,

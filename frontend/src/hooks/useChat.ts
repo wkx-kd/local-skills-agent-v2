@@ -24,10 +24,12 @@ export function useChat() {
         store.appendStreamContent(data.content || '');
         break;
       case 'tool_call':
-        store.appendStreamContent(`\n[调用工具: ${data.name}]\n`);
+        // Reset stream so pre-tool partial text doesn't persist;
+        // Spin will show while tool runs, then final response streams in
+        store.resetStreamContent();
         break;
       case 'tool_result':
-        store.appendStreamContent(`\n[工具结果: ${data.output?.slice(0, 200)}]\n`);
+        // Tool result is internal — ignore
         break;
       case 'done':
         store.setIsGenerating(false);
