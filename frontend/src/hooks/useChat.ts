@@ -3,6 +3,17 @@ import { useChatStore } from '../stores/chatStore';
 import { useWebSocket } from './useWebSocket';
 import type { WSMessageReceive } from '../types/chat';
 
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export function useChat() {
   const store = useChatStore();
   const currentConvId = useRef<string | null>(null);
@@ -24,7 +35,7 @@ export function useChat() {
         const content = useChatStore.getState().streamContent;
         if (content) {
           store.addMessage({
-            id: data.message_id || crypto.randomUUID(),
+            id: data.message_id || generateId(),
             conversation_id: currentConvId.current || '',
             role: 'assistant',
             content: [{ type: 'text', text: content }],
@@ -53,7 +64,7 @@ export function useChat() {
 
     // 添加用户消息到列表
     store.addMessage({
-      id: crypto.randomUUID(),
+      id: generateId(),
       conversation_id: conv.id,
       role: 'user',
       content: [{ type: 'text', text: content }],
