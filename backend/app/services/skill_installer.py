@@ -218,24 +218,44 @@ class SkillInstaller:
         def _unzip():
             import zipfile
             with zipfile.ZipFile(zip_path, 'r') as zf:
-                # 检查是否有顶级目录
-                names = zf.namelist()
-                if names and names[0].endswith('/'):
-                    # ZIP 包含顶级目录，提取到临时目录后移动
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        zf.extractall(tmpdir)
-                        subdirs = [d for d in Path(tmpdir).iterdir() if d.is_dir()]
-                        if len(subdirs) == 1:
-                            shutil.move(str(subdirs[0]), str(target_dir))
+                # 过滤 macOS 元数据文件
+                all_names = [
+                    n for n in zf.namelist()
+                    if not n.startswith('__MACOSX/')
+                    and not n.endswith('/.DS_Store')
+                    and Path(n).name != '.DS_Store'
+                ]
+                if not all_names:
+                    raise Exception("ZIP 文件为空或仅包含元数据")
+
+                # 统计所有条目的顶层路径组件
+                top_levels = set()
+                for name in all_names:
+                    first = name.split('/', 1)[0]
+                    if first:
+                        top_levels.add(first)
+
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    tmp_path = Path(tmpdir)
+                    # 仅解压过滤后的条目
+                    for name in all_names:
+                        zf.extract(name, tmp_path)
+
+                    if len(top_levels) == 1:
+                        # 所有条目共享同一顶层目录：将其内容作为 skill 目录
+                        only_top = next(iter(top_levels))
+                        src = tmp_path / only_top
+                        if src.is_dir():
+                            shutil.move(str(src), str(target_dir))
                         else:
-                            # 多个目录或无目录，直接创建目标目录
+                            # 只有一个文件
                             target_dir.mkdir()
-                            for item in Path(tmpdir).iterdir():
-                                shutil.move(str(item), str(target_dir / item.name))
-                else:
-                    # ZIP 直接包含文件
-                    target_dir.mkdir()
-                    zf.extractall(str(target_dir))
+                            shutil.move(str(src), str(target_dir / src.name))
+                    else:
+                        # 多个顶层条目：直接作为 skill 目录
+                        target_dir.mkdir()
+                        for item in tmp_path.iterdir():
+                            shutil.move(str(item), str(target_dir / item.name))
 
         try:
             await asyncio.to_thread(_unzip)
@@ -249,10 +269,20 @@ class SkillInstaller:
         meta = self._parse_skill_md(skill_md_path)
 
         if not meta:
+            # 列出目标目录的内容帮助排查
+            try:
+                entries = ", ".join(p.name for p in target_dir.iterdir())
+            except Exception:
+                entries = "(无法读取)"
             shutil.rmtree(target_dir, ignore_errors=True)
+            if not skill_md_path.exists():
+                return InstallResult(
+                    success=False,
+                    error=f"SKILL.md 不存在。目录内容: [{entries}]。请确保 SKILL.md 位于 ZIP 根目录或单一顶层子目录内",
+                )
             return InstallResult(
                 success=False,
-                error="SKILL.md 不存在或格式错误",
+                error="SKILL.md 格式错误：需要 YAML frontmatter 包含 name 和 description 字段",
             )
 
         # 检查数据库中是否已存在同名 Skill
