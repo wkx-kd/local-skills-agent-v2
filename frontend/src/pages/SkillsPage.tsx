@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSkillStore } from '../stores/skillStore';
 import { useAuth } from '../hooks/useAuth';
 import { skillsApi } from '../api/skills';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { Skill, SkillGroup } from '../types/skill';
 
 const { Title, Text } = Typography;
@@ -18,6 +19,7 @@ const { Title, Text } = Typography;
 export default function SkillsPage() {
   useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { skills, skillGroups, fetchSkills, fetchSkillGroups, toggleSkill } = useSkillStore();
 
   const [installModalOpen, setInstallModalOpen] = useState(false);
@@ -71,7 +73,6 @@ export default function SkillsPage() {
     }
   };
 
-  // 统一的分组提交：新建 or 更新，根据 editingGroup 判断
   const handleSubmitGroup = async (values: { name: string; description?: string; skillIds?: string[] }) => {
     setGroupLoading(true);
     try {
@@ -161,24 +162,74 @@ export default function SkillsPage() {
     },
   ];
 
+  // 移动端 Skill 卡片列表
+  const SkillCardList = () => (
+    <List
+      dataSource={skills}
+      locale={{ emptyText: '暂无已安装的 Skill' }}
+      renderItem={(skill) => (
+        <List.Item style={{ padding: '8px 0' }}>
+          <Card
+            size="small"
+            style={{ width: '100%', background: '#2a2b2f', border: '1px solid #444746', borderRadius: 12 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <Text strong style={{ color: '#e3e3e3' }}>{skill.name}</Text>
+                  <Tag color={skill.source_type === 'git' ? 'blue' : 'green'} style={{ margin: 0 }}>
+                    {skill.source_type}
+                  </Tag>
+                  {skill.version && (
+                    <Text type="secondary" style={{ fontSize: 11 }}>v{skill.version}</Text>
+                  )}
+                </div>
+                {skill.description && (
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                    {skill.description}
+                  </Text>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8, flexShrink: 0 }}>
+                <Switch
+                  size="small"
+                  checked={skill.is_active}
+                  onChange={() => toggleSkill(skill.id)}
+                />
+                <Popconfirm
+                  title={`确定卸载 "${skill.name}"？`}
+                  onConfirm={() => handleUninstall(skill.id, skill.name)}
+                >
+                  <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+                </Popconfirm>
+              </div>
+            </div>
+          </Card>
+        </List.Item>
+      )}
+    />
+  );
+
   return (
-    <div style={{ padding: 24, maxWidth: '100%', minHeight: '100vh', background: '#131314' }}>
+    <div style={{ padding: isMobile ? '16px 12px' : 24, maxWidth: '100%', minHeight: '100vh', background: '#131314' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <Space style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/')} type="default">
-            SYS_RETURN
+            返回
           </Button>
-          <Title level={4} style={{ margin: 0, color: '#e3e3e3' }}>SKILL_MANAGEMENT_CONSOLE</Title>
-        </Space>
+          <Title level={isMobile ? 5 : 4} style={{ margin: 0, color: '#e3e3e3' }}>
+            Skill 管理
+          </Title>
+        </div>
 
         <Tabs
           items={[
             {
               key: 'skills',
-              label: 'INSTALLED_SKILLS',
+              label: '已安装',
               children: (
                 <Card style={{ borderRadius: 16, background: '#1e1f20', border: 'none' }}>
-                  <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+                  <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
@@ -190,19 +241,23 @@ export default function SkillsPage() {
                       扫描本地目录
                     </Button>
                   </div>
-                  <Table
-                    dataSource={skills}
-                    columns={skillColumns}
-                    rowKey="id"
-                    pagination={false}
-                    loading={loading}
-                  />
+                  {isMobile ? (
+                    <SkillCardList />
+                  ) : (
+                    <Table
+                      dataSource={skills}
+                      columns={skillColumns}
+                      rowKey="id"
+                      pagination={false}
+                      loading={loading}
+                    />
+                  )}
                 </Card>
               ),
             },
             {
               key: 'groups',
-              label: 'SKILL_GROUPS',
+              label: 'Skill 分组',
               children: (
                 <Card style={{ borderRadius: 16, background: '#1e1f20', border: 'none' }}>
                   <div style={{ marginBottom: 16 }}>
@@ -215,21 +270,36 @@ export default function SkillsPage() {
                     locale={{ emptyText: '暂无分组，点击"创建分组"添加' }}
                     renderItem={(group) => (
                       <List.Item
-                        actions={[
-                          <Button type="link" onClick={() => openEditGroup(group)}>
-                            编辑
-                          </Button>,
-                          <Popconfirm
-                            title={`确定删除分组 "${group.name}"？`}
-                            onConfirm={() => handleDeleteGroup(group.id)}
-                          >
-                            <Button type="link" danger>删除</Button>
-                          </Popconfirm>,
-                        ]}
+                        actions={
+                          isMobile ? undefined : [
+                            <Button type="link" onClick={() => openEditGroup(group)}>编辑</Button>,
+                            <Popconfirm
+                              title={`确定删除分组 "${group.name}"？`}
+                              onConfirm={() => handleDeleteGroup(group.id)}
+                            >
+                              <Button type="link" danger>删除</Button>
+                            </Popconfirm>,
+                          ]
+                        }
                       >
                         <List.Item.Meta
                           avatar={<FolderOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
-                          title={<Text style={{ color: '#e3e3e3' }}>{group.name}</Text>}
+                          title={
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text style={{ color: '#e3e3e3' }}>{group.name}</Text>
+                              {isMobile && (
+                                <Space>
+                                  <Button type="link" size="small" onClick={() => openEditGroup(group)}>编辑</Button>
+                                  <Popconfirm
+                                    title={`确定删除分组 "${group.name}"？`}
+                                    onConfirm={() => handleDeleteGroup(group.id)}
+                                  >
+                                    <Button type="link" size="small" danger>删除</Button>
+                                  </Popconfirm>
+                                </Space>
+                              )}
+                            </div>
+                          }
                           description={
                             <Space wrap>
                               {group.description && <Text type="secondary">{group.description}</Text>}
@@ -256,6 +326,7 @@ export default function SkillsPage() {
           open={installModalOpen}
           onCancel={() => { setInstallModalOpen(false); installForm.resetFields(); }}
           footer={null}
+          style={isMobile ? { top: 20 } : undefined}
         >
           <Tabs
             items={[
@@ -325,7 +396,7 @@ export default function SkillsPage() {
           onOk={() => groupForm.submit()}
           okText={editingGroup ? '保存' : '创建'}
           confirmLoading={groupLoading}
-          width={600}
+          style={isMobile ? { top: 20 } : undefined}
         >
           <Form form={groupForm} onFinish={handleSubmitGroup} layout="vertical">
             <Form.Item

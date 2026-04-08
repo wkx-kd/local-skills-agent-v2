@@ -6,7 +6,11 @@ import { useSkillStore } from '../../stores/skillStore';
 
 const { Text } = Typography;
 
-export default function ConversationList() {
+interface Props {
+  onSelect?: () => void;
+}
+
+export default function ConversationList({ onSelect }: Props) {
   const {
     conversations, currentConversation,
     fetchConversations, setCurrentConversation,
@@ -22,6 +26,7 @@ export default function ConversationList() {
   const handleSelect = async (conv: typeof conversations[0]) => {
     setCurrentConversation(conv);
     await fetchMessages(conv.id);
+    onSelect?.();
   };
 
   const handleCreate = async () => {
